@@ -16,6 +16,7 @@ from data.station_store import StationHistoricalStore
 from modules.bayesian_network import AQIBayesianNetwork
 from modules.fuzzy_logic import AQIFuzzySystem
 from modules.neural_network import AQINeuralNetwork
+from modules.time_series_forecaster import AQITimeSeriesForecaster
 
 CITY = "Mumbai"
 POLLUTANTS = ["PM2.5", "PM10", "NO2", "SO2", "CO", "OZONE", "NH3"]
@@ -157,6 +158,7 @@ def main() -> None:
     bn_model = AQIBayesianNetwork()
     fuzzy_model = AQIFuzzySystem()
     nn_model = AQINeuralNetwork()
+    ts_model = AQITimeSeriesForecaster(lookback_hours=48, forecast_hours=24)
 
     st.sidebar.header("CPCB Live Data — data.gov.in")
     st.sidebar.markdown("**City: Mumbai (fixed)**")
@@ -173,6 +175,7 @@ def main() -> None:
     st.sidebar.subheader("Neural Training")
     min_rows = st.sidebar.number_input("Min rows to train", min_value=5, max_value=500, value=200, step=5)
     train_nn = st.sidebar.button("Train / Refresh Neural Model")
+    train_ts = st.sidebar.button("Train Future Forecaster (24h)")
 
     history = store.load_history()
     mumbai_history = history[history["city"] == CITY] if not history.empty else pd.DataFrame()
@@ -208,6 +211,14 @@ def main() -> None:
                 st.sidebar.success(
                     f"NN trained ({backend}). Test accuracy: {train_info.get('test_accuracy', 0.0):.2%}"
                 )
+
+    if train_ts:
+        with st.spinner("Compiling past 48h windows and training 24h Deep Forecaster..."):
+            ts_res = ts_model.train(CITY)
+            if ts_res.get("status") == "success":
+                st.sidebar.success(f"Forecaster trained on {ts_res['trained_samples']} samples! MAE: {ts_res['mae']:.1f} AQI")
+            else:
+                st.sidebar.error(f"Error: {ts_res.get('message', 'Unknown Error')}")
 
     should_fetch = do_fetch or not st.session_state["current_summary"]
     if should_fetch:
@@ -381,6 +392,21 @@ def main() -> None:
             st.line_chart(plot_df)
     else:
         st.info("No historical Mumbai readings yet. Click Fetch Live Data or Collect API Batches.")
+
+    st.subheader("Deep Time-Series Future Forecast (Next 24 Hours)")
+    ts_forecast = ts_model.predict_future_24h(CITY)
+    if "error" in ts_forecast and ts_forecast["error"]:
+        if "trained" in ts_forecast["error"].lower():
+            st.info("The 24-hour Deep Forecaster hasn't been trained yet! Click 'Train Future Forecaster (24h)' in the sidebar.")
+        else:
+            st.warning(f"Forecaster: {ts_forecast['error']}")
+    else:
+        forecast_df = pd.DataFrame({
+            "Time": ts_forecast["future_labels"],
+            "Forecasted AQI": ts_forecast["forecast_aqi"]
+        }).set_index("Time")
+        st.caption("Auto-Regressive Multi-Output Model dynamically forecasting AQI score based on recent 48-hour sequence.")
+        st.line_chart(forecast_df, color=["#FF4B4B"])
 
     st.subheader("Monitoring Stations Map")
     if not long_df.empty and {"lat", "lon"}.issubset(set(long_df.columns)):
