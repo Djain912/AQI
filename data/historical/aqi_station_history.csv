@@ -17407,3 +17407,71 @@ timestamp,city,station,lat,lon,PM2.5,PM10,NO2,SO2,CO,OZONE,NH3,hour,is_peak,aqi_
 2026-03-28T14:49:10.267413,Mumbai,"Sion, Mumbai - MPCB",Maharashtra,2026-03-28 13:00:00,68.0,64.0,29.0,2.0,16.0,,7.0,157.5,Moderate,14,0
 2026-03-28T14:49:10.267413,Mumbai,"Vile Parle West, Mumbai - MPCB",Maharashtra,2026-03-28 13:00:00,23.0,36.0,11.0,49.0,30.0,,6.0,73.9,Satisfactory,14,0
 2026-03-28T14:49:10.267413,Mumbai,"Worli, Mumbai -MPCB",Maharashtra,2026-03-28 13:00:00,28.0,81.0,12.0,30.0,16.0,21.0,3.0,84.4,Satisfactory,14,0
+2026-03-31T00:38:26.128684,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:38:26.128684,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:38:26.128684,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:38:26.128684,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:38:43.792381,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:38:43.792381,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:38:43.792381,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:38:43.792381,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:38:45.569220,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:38:45.569220,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:38:45.569220,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:38:45.569220,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:38:47.340954,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:38:47.340954,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:38:47.340954,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:38:47.340954,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:38:49.198785,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:38:49.198785,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:38:49.198785,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:38:49.198785,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:38:50.970192,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:38:50.970192,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:38:50.970192,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:38:50.970192,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:38:53.254164,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:38:53.254164,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:38:53.254164,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:38:53.254164,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:38:55.013369,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:38:55.013369,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:38:55.013369,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:38:55.013369,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:38:56.787602,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:38:56.787602,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:38:56.787602,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:38:56.787602,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:58:15.229396,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:58:15.229396,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:58:15.229396,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:58:15.229396,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:58:17.085670,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:58:17.085670,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:58:17.085670,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:58:17.085670,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:58:18.894750,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:58:18.894750,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:58:18.894750,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:58:18.894750,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:58:36.519991,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:58:36.519991,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:58:36.519991,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:58:36.519991,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:58:38.270894,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:58:38.270894,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:58:38.270894,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:58:38.270894,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:58:40.042370,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:58:40.042370,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:58:40.042370,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:58:40.042370,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:58:41.755053,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:58:41.755053,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:58:41.755053,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:58:41.755053,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0
+2026-03-31T00:58:43.710132,Mumbai,"Bandra Kurla Complex, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,,,,,27.0,,,Moderate,0,0
+2026-03-31T00:58:43.710132,Mumbai,"Borivali East, Mumbai - IITM",Maharashtra,2026-03-30 16:00:00,,47.0,,,,,7.0,,Moderate,0,0
+2026-03-31T00:58:43.710132,Mumbai,"Borivali East, Mumbai - MPCB",Maharashtra,2026-03-30 16:00:00,,33.0,,,,,,,Moderate,0,0
+2026-03-31T00:58:43.710132,Mumbai,"Byculla, Mumbai - BMC",Maharashtra,2026-03-30 16:00:00,,27.0,,,,,4.0,,Moderate,0,0

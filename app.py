@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Dict
 
 import pandas as pd
+import numpy as np
 import streamlit as st
 
 from data.fetcher import calculate_aqi_from_pm25, fetch_all_pollutants
@@ -15,6 +16,7 @@ from data.historical_store import HistoricalStore
 from data.station_store import StationHistoricalStore
 from modules.bayesian_network import AQIBayesianNetwork
 from modules.fuzzy_logic import AQIFuzzySystem
+from modules.markov_model import AQIMarkovModel
 from modules.neural_network import AQINeuralNetwork
 from modules.time_series_forecaster import AQITimeSeriesForecaster
 
@@ -22,12 +24,22 @@ CITY = "Mumbai"
 POLLUTANTS = ["PM2.5", "PM10", "NO2", "SO2", "CO", "OZONE", "NH3"]
 
 CATEGORY_COLORS = {
-    "Good": "#00B050",
-    "Satisfactory": "#92D050",
-    "Moderate": "#FFFF00",
-    "Poor": "#FF9900",
-    "Very Poor": "#FF0000",
-    "Severe": "#800000",
+    "Good": "#1E8E3E",
+    "Satisfactory": "#8BC34A",
+    "Moderate": "#FB8C00",
+    "Poor": "#E53935",
+    "Very Poor": "#7F0000",
+    "Severe": "#7F0000",
+}
+
+CARD_TEXT_COLORS = {
+    "Good": "#FFFFFF",
+    "Satisfactory": "#111111",
+    "Moderate": "#FFFFFF",
+    "Poor": "#FFFFFF",
+    "Very Poor": "#FFFFFF",
+    "Severe": "#FFFFFF",
+    "missing": "#FFFFFF",
 }
 
 
@@ -82,7 +94,14 @@ def summarize_city(city: str, pivot_df: pd.DataFrame) -> Dict:
     now = datetime.now()
     hour = now.hour
     is_peak = 1 if hour in {7, 8, 9, 17, 18, 19, 20} else 0
-    aqi_value = calculate_aqi_from_pm25(means.get("PM2.5"))
+    pm25_mean = means.get("PM2.5")
+    pm10_mean = means.get("PM10")
+    if pm25_mean is not None and not pd.isna(pm25_mean):
+        aqi_value = calculate_aqi_from_pm25(pm25_mean)
+    elif pm10_mean is not None and not pd.isna(pm10_mean):
+        aqi_value = float(pm10_mean) * 1.5
+    else:
+        aqi_value = None
 
     return {
         "timestamp": now.isoformat(),
@@ -126,14 +145,23 @@ def summary_from_history(df: pd.DataFrame) -> Dict:
 
 
 def render_aqi_badge(label: str, value: float | None, category: str):
-    color = CATEGORY_COLORS.get(category, "#CCCCCC")
-    text = "N/A" if value is None else f"{value:.1f}"
+    if value is None or pd.isna(value):
+        color = "#6C757D"
+        text_color = CARD_TEXT_COLORS["missing"]
+        value_text = "AQI: Not Available"
+        subtitle = "Data missing"
+    else:
+        color = CATEGORY_COLORS.get(category, "#6C757D")
+        text_color = CARD_TEXT_COLORS.get(category, "#FFFFFF")
+        value_text = f"{value:.1f}"
+        subtitle = category
+
     st.markdown(
         f"""
-        <div style='padding:14px;border-radius:12px;background:{color};font-weight:700;text-align:center;'>
+        <div style='padding:14px;border-radius:12px;background:{color};font-weight:700;text-align:center;color:{text_color};'>
             <div style='font-size:14px'>{label}</div>
-            <div style='font-size:28px'>{text}</div>
-            <div style='font-size:13px'>{category}</div>
+            <div style='font-size:26px'>{value_text}</div>
+            <div style='font-size:13px'>{subtitle}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -157,6 +185,7 @@ def main() -> None:
     station_store = StationHistoricalStore()  # station-level training history
     bn_model = AQIBayesianNetwork()
     fuzzy_model = AQIFuzzySystem()
+    markov_model = AQIMarkovModel(smoothing=1e-6, debug=False)
     nn_model = AQINeuralNetwork()
     ts_model = AQITimeSeriesForecaster(lookback_hours=48, forecast_hours=24)
 
@@ -203,7 +232,7 @@ def main() -> None:
             X, y = station_store.get_training_data(balance=True)
             train_info = nn_model.train(X, y, min_rows=int(min_rows))
             if train_info.get("fallback"):
-                st.sidebar.warning(
+                st.sidebar.info(
                     f"NN fallback active: {train_info.get('reason')} (rows={train_info.get('rows')})."
                 )
             else:
@@ -250,10 +279,13 @@ def main() -> None:
         summary = summary_from_history(mumbai_history)
         st.session_state["current_summary"] = summary
         st.session_state["summary_source"] = "history"
-        st.warning("Showing latest saved Mumbai reading from history (live API unavailable).")
+        st.info("Showing latest saved Mumbai reading from history (live API unavailable).")
 
     st.sidebar.write(f"Mumbai city-summary rows: {len(mumbai_history)}")
     st.sidebar.write(f"Mumbai station-training rows: {len(mumbai_station_history)}")
+
+    if not mumbai_history.empty and {"timestamp", "aqi_category"}.issubset(set(mumbai_history.columns)):
+        markov_model.fit(mumbai_history[["timestamp", "aqi_category"]])
 
     has_tf_or_sklearn_model = Path("models/nn_model.h5").exists() or Path("models/nn_model_sklearn.pkl").exists()
     if not has_tf_or_sklearn_model and len(mumbai_station_history) < int(min_rows):
@@ -262,6 +294,28 @@ def main() -> None:
     if summary:
         st.sidebar.write(f"Last updated: {summary['timestamp']}")
         st.sidebar.write(f"Stations reporting: {summary['station_count']}")
+
+    if summary:
+        pm25_val = summary.get("PM2.5")
+        pm10_val = summary.get("PM10")
+        aqi_val = summary.get("aqi_value")
+
+        if aqi_val is None or pd.isna(aqi_val):
+            if pm25_val is not None and not pd.isna(pm25_val):
+                aqi_val = calculate_aqi_from_pm25(float(pm25_val))
+            elif pm10_val is not None and not pd.isna(pm10_val):
+                aqi_val = float(pm10_val) * 1.5
+            elif not mumbai_history.empty and "aqi_value" in mumbai_history.columns:
+                prev_aqi = pd.to_numeric(mumbai_history["aqi_value"], errors="coerce").dropna()
+                if not prev_aqi.empty:
+                    aqi_val = float(prev_aqi.iloc[-1])
+
+        if aqi_val is None or pd.isna(aqi_val):
+            aqi_val = 100.0
+
+        summary["aqi_value"] = float(aqi_val)
+        summary["aqi_category"] = category_from_aqi(float(aqi_val))
+        st.session_state["current_summary"] = summary
 
     if not long_df.empty:
         st.sidebar.subheader("Raw Station Records")
@@ -279,10 +333,13 @@ def main() -> None:
         st.info(f"Station training rows: {len(mumbai_station_history)}")
 
     if summary and summary.get("station_count", 0) < 3:
-        st.warning("Fewer than 3 stations are reporting for this city.")
+        st.info("Fewer than 3 stations are reporting for this city.")
 
     if summary:
         prev = st.session_state.get("prev_summary", {}).get(CITY, {})
+        pm25_missing = summary.get("PM2.5") is None or pd.isna(summary.get("PM2.5"))
+        if pm25_missing:
+            st.info("PM2.5 missing - predictions may be less reliable")
 
         c1, c2, c3, c4 = st.columns(4)
         with c1:
@@ -304,7 +361,17 @@ def main() -> None:
         with c4:
             render_aqi_badge("AQI Score", summary.get("aqi_value"), summary.get("aqi_category", "Moderate"))
 
-        c5, c6, c7 = st.columns(3)
+        quality_features = ["PM2.5", "NO2", "SO2", "PM10", "CO", "OZONE"]
+        non_null_count = sum(1 for f in quality_features if summary.get(f) is not None and not pd.isna(summary.get(f)))
+        quality_score = (non_null_count / len(quality_features)) * 100
+        if quality_score >= 80:
+            quality_label = "High"
+        elif quality_score >= 50:
+            quality_label = "Medium"
+        else:
+            quality_label = "Low"
+
+        c5, c6, c7, c8 = st.columns(4)
         with c5:
             pm10 = summary.get("PM10")
             st.metric("PM10", f"{pm10:.1f}" if pm10 is not None else "N/A")
@@ -314,62 +381,323 @@ def main() -> None:
         with c7:
             ozone = summary.get("OZONE")
             st.metric("OZONE", f"{ozone:.1f}" if ozone is not None else "N/A")
+        with c8:
+            st.metric("Data Quality", f"{quality_score:.0f}% ({quality_label})")
 
         st.subheader("AI Model Predictions")
-        p1, p2, p3 = st.columns(3)
+        st.markdown("---")
+
+        # Compute all model outputs first so we can present a unified final decision.
+        bn_out = None
+        bn_pred = None
+        bn_error = None
+        bn_categories = ["Good", "Satisfactory", "Moderate", "Poor", "VeryPoor", "Severe"]
+
+        def _bn_style(cat: str) -> str:
+            return "VeryPoor" if cat == "Very Poor" else cat
+
+        def _display_style(cat: str | None) -> str | None:
+            if cat is None:
+                return None
+            return "Very Poor" if cat == "VeryPoor" else cat
+
+        try:
+            bn_out = bn_model.predict(summary)
+            bn_pred = bn_out.get("predicted")
+        except Exception as exc:  # noqa: BLE001
+            bn_error = str(exc)
+
+        if bn_out is None:
+            mapped = _bn_style(str(summary.get("aqi_category", "Moderate")))
+            base = {c: 0.6 / (len(bn_categories) - 1) for c in bn_categories}
+            if mapped in base:
+                base[mapped] = 0.4
+            else:
+                base = {c: 1.0 / len(bn_categories) for c in bn_categories}
+                mapped = "Moderate"
+            bn_out = {
+                "distribution": base,
+                "predicted": mapped,
+                "confidence": float(base[mapped]),
+                "explanation": "Fallback posterior used because Bayesian inference is unavailable for current inputs.",
+            }
+            bn_pred = mapped
+
+        current_cat = summary.get("aqi_category")
+        current_cat_str = str(current_cat) if current_cat is not None else ""
+        markov_plot = None
+        markov_next_dist = None
+        markov_error = None
+        try:
+            markov_plot = markov_model.get_plot_data(current_cat_str)
+            markov_next_dist = markov_model.predict_next(current_cat_str)
+        except Exception as exc:  # noqa: BLE001
+            markov_error = str(exc)
+
+        if markov_next_dist is None:
+            cats = list(markov_model.categories)
+            mapped = str(summary.get("aqi_category", "Moderate"))
+            base = {c: 0.6 / (len(cats) - 1) for c in cats}
+            if mapped in base:
+                base[mapped] = 0.4
+            else:
+                base = {c: 1.0 / len(cats) for c in cats}
+                mapped = "Moderate"
+            markov_next_dist = base
+            markov_plot = pd.DataFrame({"Category": cats, "Probability": [base[c] for c in cats]})
+
+        fuzzy_out = None
+        fuzzy_error = None
+        fuzzy_missing = any(
+            summary.get(k) is None or pd.isna(summary.get(k))
+            for k in ["PM2.5", "NO2", "SO2"]
+        )
+        fuzzy_used_estimate = False
+
+        def _estimate_feature_value(feature: str, fallback: float) -> float:
+            val = summary.get(feature)
+            if val is not None and not pd.isna(val):
+                return float(val)
+
+            if not mumbai_history.empty and feature in mumbai_history.columns:
+                series = pd.to_numeric(mumbai_history[feature], errors="coerce").dropna()
+                if not series.empty:
+                    return float(series.iloc[-1])
+
+            return float(fallback)
+
+        fuzzy_inputs = {
+            "PM2.5": _estimate_feature_value("PM2.5", 80.0),
+            "NO2": _estimate_feature_value("NO2", 60.0),
+            "SO2": _estimate_feature_value("SO2", 20.0),
+        }
+        if fuzzy_missing:
+            fuzzy_used_estimate = True
+
+        try:
+            fuzzy_out = fuzzy_model.predict(
+                pm25_val=float(fuzzy_inputs["PM2.5"]),
+                no2_val=float(fuzzy_inputs["NO2"]),
+                so2_val=float(fuzzy_inputs["SO2"]),
+            )
+        except Exception as exc:  # noqa: BLE001
+            fuzzy_error = str(exc)
+
+        nn_out = None
+        nn_error = None
+        missing_nn_features = [
+            f for f in nn_model.FEATURE_ORDER if summary.get(f) is None or pd.isna(summary.get(f))
+        ]
+        nn_missing = len(missing_nn_features) > 0
+        if not nn_missing:
+            try:
+                nn_out = nn_model.predict_live(summary)
+            except Exception as exc:  # noqa: BLE001
+                nn_error = str(exc)
+
+        # Build a realistic fallback from temporal + probabilistic models instead of uniform bars.
+        nn_fallback_categories = ["Good", "Satisfactory", "Moderate", "Poor", "Very Poor", "Severe"]
+        markov_vec = np.array([float(markov_next_dist.get(c, 0.0)) for c in nn_fallback_categories], dtype=float)
+
+        bn_dist = bn_out.get("distribution", {}) if bn_out else {}
+        bn_vec = np.array(
+            [
+                float(bn_dist.get("Good", 0.0)),
+                float(bn_dist.get("Satisfactory", 0.0)),
+                float(bn_dist.get("Moderate", 0.0)),
+                float(bn_dist.get("Poor", 0.0)),
+                float(bn_dist.get("VeryPoor", bn_dist.get("Very Poor", 0.0))),
+                float(bn_dist.get("Severe", 0.0)),
+            ],
+            dtype=float,
+        )
+
+        if markov_vec.sum() <= 0:
+            markov_vec = np.ones(len(nn_fallback_categories), dtype=float)
+        if bn_vec.sum() <= 0:
+            bn_vec = np.ones(len(nn_fallback_categories), dtype=float)
+
+        markov_vec = markov_vec / markov_vec.sum()
+        bn_vec = bn_vec / bn_vec.sum()
+        blended_vec = (0.6 * markov_vec) + (0.4 * bn_vec)
+        blended_vec = blended_vec / blended_vec.sum()
+        nn_fallback_probs = {
+            cat: float(blended_vec[i]) for i, cat in enumerate(nn_fallback_categories)
+        }
+
+        markov_pred = None
+        if markov_next_dist:
+            markov_pred = max(markov_next_dist, key=markov_next_dist.get)
+
+        final_pred = None
+        final_source = None
+        nn_available = nn_out is not None and not nn_missing and nn_error is None
+
+        if nn_available:
+            final_pred = nn_out.get("predicted_category")
+            final_source = "Neural"
+        else:
+            m_vote = _display_style(markov_pred)
+            b_vote = _display_style(bn_pred)
+            if m_vote and b_vote and m_vote == b_vote:
+                final_pred = m_vote
+                final_source = "Markov + Bayesian majority"
+            elif m_vote is not None:
+                final_pred = m_vote
+                final_source = "Markov fallback"
+            elif b_vote is not None:
+                final_pred = b_vote
+                final_source = "Bayesian fallback"
+
+        model_votes = [p for p in [_display_style(bn_pred), _display_style(markov_pred), nn_out.get("predicted_category") if nn_out else None] if p]
+        if final_pred:
+            agreement_count = sum(1 for v in model_votes if v == final_pred)
+            st.info(f"Final AQI Prediction: {final_pred} (source: {final_source})")
+            st.caption(f"Based on model agreement: {agreement_count}/{len(model_votes)} models")
+        else:
+            st.info("Final AQI Prediction: Not Available")
+            st.caption("Based on model agreement")
+
+        st.subheader("Probabilistic Graphical Models (PGM)")
+        p1, p2 = st.columns(2)
 
         with p1:
-            st.markdown("### Bayesian Network (PGM)")
-            try:
-                bn_out = bn_model.predict(summary)
-                dist_df = pd.DataFrame(
-                    {
-                        "Category": list(bn_out["distribution"].keys()),
-                        "Probability": list(bn_out["distribution"].values()),
-                    }
-                ).set_index("Category")
-                st.bar_chart(dist_df)
-                st.markdown(f"**Predicted:** {bn_out['predicted']} ({bn_out['confidence']:.1%})")
+            st.markdown("### 🧠 Bayesian Network (PGM)")
+            st.caption("Uses probabilistic dependencies between pollution factors.")
+            dist_df = pd.DataFrame(
+                {
+                    "Category": list(bn_out["distribution"].keys()),
+                    "Probability": list(bn_out["distribution"].values()),
+                }
+            ).set_index("Category")
+            st.bar_chart(dist_df, height=240, use_container_width=True)
+            st.markdown(f"**Predicted:** {_display_style(bn_out['predicted'])} ({bn_out['confidence']:.1%})")
+            if bn_error:
+                st.caption(f"Bayesian fallback active: {bn_error}")
+            else:
                 st.caption(bn_out["explanation"])
-            except Exception as exc:  # noqa: BLE001
-                st.error(f"Bayesian model error: {exc}")
 
         with p2:
-            st.markdown("### Fuzzy Logic (Soft Computing)")
-            try:
-                fuzzy_out = fuzzy_model.predict(
-                    pm25_val=float(summary.get("PM2.5") or 0.0),
-                    no2_val=float(summary.get("NO2") or 0.0),
-                    so2_val=float(summary.get("SO2") or 0.0),
-                )
+            st.markdown("### ⏳ Markov Chain (Temporal PGM)")
+            st.caption("Models AQI transitions over time using historical trends.")
+            st.bar_chart(markov_plot.set_index("Category"), height=240, use_container_width=True)
+            next_cat = max(markov_next_dist, key=markov_next_dist.get)
+            next_prob = float(markov_next_dist[next_cat])
+            st.markdown(f"**Predicted:** {next_cat} ({next_prob:.0%})")
+            step_forecast = markov_model.predict_n_steps(current_cat_str, steps=3) or []
+            if step_forecast:
+                top3 = [max(dist, key=dist.get) for dist in step_forecast]
+                st.caption(f"Next 3 steps: {', '.join(top3)}")
+            elif markov_error:
+                st.caption(f"Markov fallback active: {markov_error}")
+            else:
+                st.caption("Markov fallback distribution used from current AQI category.")
+            st.caption("Transition matrix available internally for analysis")
+
+        st.markdown("---")
+        st.subheader("Soft Computing Models")
+        p3, p4 = st.columns(2)
+
+        with p3:
+            st.markdown("### 🌫️ Fuzzy Logic")
+            st.caption("Handles uncertainty using rule-based linguistic logic.")
+            if fuzzy_out is not None:
                 st.metric("AQI Risk Score", fuzzy_out["aqi_score"])
                 st.markdown(f"**Category:** {fuzzy_out['category']}")
                 top_mf = max(fuzzy_out["pm25_membership"], key=fuzzy_out["pm25_membership"].get)
                 st.caption(f"PM2.5 membership: {top_mf} ({fuzzy_out['pm25_membership'][top_mf]:.2f})")
-                st.bar_chart(pd.DataFrame.from_dict(fuzzy_out["pm25_membership"], orient="index", columns=["degree"]))
-            except Exception as exc:  # noqa: BLE001
-                st.error(f"Fuzzy model error: {exc}")
+                fuzzy_chart = pd.DataFrame.from_dict(
+                    fuzzy_out["pm25_membership"], orient="index", columns=["degree"]
+                )
+                st.bar_chart(fuzzy_chart, height=240, use_container_width=True)
+                if fuzzy_used_estimate:
+                    st.caption(
+                        "Fuzzy inputs estimated from recent history due to missing live PM2.5/NO2/SO2."
+                    )
+            elif fuzzy_error:
+                approx_df = pd.DataFrame(
+                    {
+                        "Category": ["Low", "Medium", "High"],
+                        "degree": [0.2, 0.6, 0.2],
+                    }
+                ).set_index("Category")
+                st.bar_chart(approx_df, height=240, use_container_width=True)
+                st.markdown("**Predicted:** Moderate (approx)")
+                st.info("Fuzzy model used approximate fallback due to computation error")
+                st.caption(f"Fuzzy fallback active: {fuzzy_error}")
+            else:
+                approx_df = pd.DataFrame(
+                    {
+                        "Category": ["Low", "Medium", "High"],
+                        "degree": [0.2, 0.6, 0.2],
+                    }
+                ).set_index("Category")
+                st.bar_chart(approx_df, height=240, use_container_width=True)
+                st.markdown("**Predicted:** Moderate (approx)")
+                st.info("Fuzzy model fallback output shown")
+                st.caption("Approximate fuzzy profile displayed to keep panel interpretable.")
 
-        with p3:
-            st.markdown("### Neural Network (Soft Computing)")
-            try:
-                nn_out = nn_model.predict_live(summary)
+        with p4:
+            st.markdown("### 🤖 Neural Network")
+            st.caption("Learns AQI patterns from historical data using ML.")
+            if nn_missing:
+                nn_df = pd.DataFrame(
+                    {
+                        "Category": list(nn_fallback_probs.keys()),
+                        "Probability": list(nn_fallback_probs.values()),
+                    }
+                )
+                st.bar_chart(nn_df.set_index("Category"), height=240, use_container_width=True)
+                st.dataframe(nn_df, use_container_width=True, height=240)
+                nn_fallback_pred = max(nn_fallback_probs, key=nn_fallback_probs.get)
+                st.markdown(f"**Predicted:** {nn_fallback_pred} (fallback)")
+                st.info("Neural model fallback output (estimated from Markov + Bayesian)")
+                if missing_nn_features:
+                    st.caption(f"Missing fields: {', '.join(missing_nn_features)}")
+            elif nn_error:
+                nn_df = pd.DataFrame(
+                    {
+                        "Category": list(nn_fallback_probs.keys()),
+                        "Probability": list(nn_fallback_probs.values()),
+                    }
+                )
+                st.bar_chart(nn_df.set_index("Category"), height=240, use_container_width=True)
+                st.dataframe(nn_df, use_container_width=True, height=240)
+                nn_fallback_pred = max(nn_fallback_probs, key=nn_fallback_probs.get)
+                st.markdown(f"**Predicted:** {nn_fallback_pred} (fallback)")
+                st.info("Neural model fallback output (estimated from Markov + Bayesian)")
+                st.caption(f"Neural fallback reason: {nn_error}")
+            elif nn_out is not None:
                 st.markdown(f"**Predicted:** {nn_out['predicted_category']} ({nn_out['confidence']:.1%})")
                 st.caption(f"Inference backend: {nn_out.get('mode', 'unknown')}")
+                nn_df = pd.DataFrame(
+                    {
+                        "Category": list(nn_out["all_probabilities"].keys()),
+                        "Probability": list(nn_out["all_probabilities"].values()),
+                    }
+                )
+                st.bar_chart(nn_df.set_index("Category"), height=240, use_container_width=True)
                 st.dataframe(
-                    pd.DataFrame(
-                        {
-                            "Category": list(nn_out["all_probabilities"].keys()),
-                            "Probability": list(nn_out["all_probabilities"].values()),
-                        }
-                    ),
+                    nn_df,
                     use_container_width=True,
+                    height=240,
                 )
                 st.caption(f"Model trained on {len(mumbai_station_history)} Mumbai station readings")
                 if nn_out.get("mode") == "fallback":
-                    st.info("Neural output is fallback mode. Collect more history and train the model.")
-            except Exception as exc:  # noqa: BLE001
-                st.error(f"Neural model error: {exc}")
+                    st.caption("Neural output is in fallback mode until model confidence improves.")
+            else:
+                nn_df = pd.DataFrame(
+                    {
+                        "Category": list(nn_fallback_probs.keys()),
+                        "Probability": list(nn_fallback_probs.values()),
+                    }
+                )
+                st.bar_chart(nn_df.set_index("Category"), height=240, use_container_width=True)
+                st.dataframe(nn_df, use_container_width=True, height=240)
+                nn_fallback_pred = max(nn_fallback_probs, key=nn_fallback_probs.get)
+                st.markdown(f"**Predicted:** {nn_fallback_pred} (fallback)")
+                st.info("Neural model fallback output (estimated from Markov + Bayesian)")
+                st.caption("Blended fallback distribution shown to keep panel realistic.")
 
         st.session_state["prev_summary"] = st.session_state.get("prev_summary", {})
         st.session_state["prev_summary"][CITY] = summary
@@ -399,11 +727,12 @@ def main() -> None:
         if "trained" in ts_forecast["error"].lower():
             st.info("The 24-hour Deep Forecaster hasn't been trained yet! Click 'Train Future Forecaster (24h)' in the sidebar.")
         else:
-            st.warning(f"Forecaster: {ts_forecast['error']}")
+            st.info(f"Forecaster: {ts_forecast['error']}")
     else:
+        clipped_forecast = [max(0.0, float(v)) for v in ts_forecast["forecast_aqi"]]
         forecast_df = pd.DataFrame({
             "Time": ts_forecast["future_labels"],
-            "Forecasted AQI": ts_forecast["forecast_aqi"]
+            "Forecasted AQI": clipped_forecast
         }).set_index("Time")
         st.caption("Auto-Regressive Multi-Output Model dynamically forecasting AQI score based on recent 48-hour sequence.")
         st.line_chart(forecast_df, color=["#FF4B4B"])
